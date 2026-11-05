@@ -1,0 +1,132 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <title>AR.js Marker-based Multi-Asset</title>
+        <!-- A-Frame 與 AR.js 核心庫 -->
+        <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
+        <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+        <script src="https://raw.githack.com/donmccurdy/aframe-extras/master/dist/aframe-extras.loaders.min.js"></script>
+        <!-- 手勢控制互動組件 -->
+        <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-detector.js"></script>
+        <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-handler.js"></script>
+        
+        <!-- 影片自動播放控制組件 -->
+        <script>
+            AFRAME.registerComponent('videohandler', {
+                init: function () {
+                    var marker = this.el;
+                    this.vid = document.querySelector("#vid");
+
+                    marker.addEventListener('markerFound', function () {
+                        this.toggle = true;
+                        if (this.vid) {
+                            this.vid.play().catch(function(e) {
+                                console.log("Autoplay prevented:", e);
+                            });
+                        }
+                    }.bind(this));
+
+                    marker.addEventListener('markerLost', function () {
+                        this.toggle = false;
+                        if (this.vid) {
+                            this.vid.pause();
+                        }
+                    }.bind(this));
+                },
+            });
+        </script>
+    </head>
+
+    <body style="margin: 0; overflow: hidden;">
+        <a-scene
+            vr-mode-ui="enabled: false;"
+            loading-screen="enabled: false;"
+            renderer="logarithmicDepthBuffer: true;"
+            arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
+            id="scene"
+            embedded
+            gesture-detector
+        >
+            <a-assets>
+                <!-- 3D 模型資源 (assets/assets.glb) -->
+                <a-asset-item
+                    id="animated-asset"
+                    src="assets/assets.glb"
+                ></a-asset-item>
+
+                <!-- 圖片資源 (assets/asset.png) -->
+                <img
+                    id="img-asset"
+                    src="assets/asset.png"
+                >
+
+                <!-- 影片資源 (assets/asset.mp4) -->
+                <video
+                    id="vid"
+                    src="assets/asset.mp4"
+                    preload="auto"
+                    response-type="arraybuffer"
+                    loop
+                    crossorigin
+                    webkit-playsinline
+                    autoplay
+                    muted
+                    playsinline
+                ></video>
+            </a-assets>
+
+            <!-- 辨識圖 Marker (assets/marker.patt) -->
+            <a-marker
+                id="markerA"
+                type="pattern"
+                preset="custom"
+                url="assets/marker.patt"
+                videohandler
+                raycaster="objects: .clickable"
+                emitevents="true"
+                cursor="fuse: false; rayOrigin: mouse;"
+                smooth="true"
+                smoothCount="10"
+                smoothTolerance="0.01"
+                smoothThreshold="5"
+            >
+                <!-- 1. 3D 模型：置於中央 -->
+                <a-entity
+                    id="model-entity"
+                    position="0 0 0"
+                    scale="0.5 0.5 0.5"
+                    animation-mixer="loop: repeat"
+                    gltf-model="#animated-asset"
+                    class="clickable"
+                    gesture-handler
+                ></a-entity>
+
+                <!-- 2. 圖片：置於左側 (-1.2)，平躺貼近 Marker 角度 -->
+                <a-image
+                    id="image-entity"
+                    src="#img-asset"
+                    position="-1.2 0 0"
+                    rotation="-90 0 0"
+                    scale="1 1 1"
+                    class="clickable"
+                    gesture-handler
+                ></a-image>
+
+                <!-- 3. 影片：置於右側 (1.2)，平躺貼近 Marker 角度 -->
+                <a-video
+                    id="video-entity"
+                    src="#vid"
+                    position="1.2 0 0"
+                    rotation="-90 0 0"
+                    scale="1 1 1"
+                    class="clickable"
+                    gesture-handler
+                ></a-video>
+            </a-marker>
+
+            <a-entity camera></a-entity>
+        </a-scene>
+    </body>
+</html>
